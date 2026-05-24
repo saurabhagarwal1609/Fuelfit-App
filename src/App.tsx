@@ -2,6 +2,7 @@ import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'rea
 import { Auth, Layout } from './components';
 import { Dashboard, MealScanner, MealPlanner, Profile, SplashScreen, WorkoutTracker } from './components';
 import { User } from 'firebase/auth';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Error Boundary for Firestore and App errors
  class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean, error: any }> {
@@ -88,9 +89,11 @@ export default function App() {
       <SplashScreen isVisible={showSplash} />
       <Auth>
         {(user) => (
-          <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-            {renderContent(user)}
-          </Layout>
+          <ThemeProvider user={user}>
+            <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+              {renderContent(user)}
+            </Layout>
+          </ThemeProvider>
         )}
       </Auth>
     </ErrorBoundary>

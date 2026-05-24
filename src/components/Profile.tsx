@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, updateDoc, getDoc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { User } from 'firebase/auth';
-import { Camera, Settings, ChevronRight, Save, Loader2, ArrowLeft } from 'lucide-react';
+import { Camera, Settings, ChevronRight, Save, Loader2, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../services/firestore';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ProfileProps {
   user: User;
@@ -12,6 +13,7 @@ interface ProfileProps {
 }
 
 export function Profile({ user, setActiveTab }: ProfileProps) {
+  const { theme, toggleTheme } = useTheme();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ protein: 0, carbs: 0, fats: 0 });
@@ -122,6 +124,37 @@ export function Profile({ user, setActiveTab }: ProfileProps) {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Dark Mode Toggle */}
+      <div className="bg-[var(--color-bg-card)] rounded-[32px] p-6 border border-[var(--color-border)] flex items-center justify-between group">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
+            theme === 'dark' ? "bg-primary/10 text-primary" : "bg-orange-500/10 text-orange-500"
+          )}>
+            {theme === 'dark' ? <Moon className="w-6 h-6" /> : <Sun className="w-6 h-6" />}
+          </div>
+          <div>
+            <h4 className="font-bold text-[var(--color-text-main)]">Appearance</h4>
+            <p className="text-[var(--color-text-muted)] text-xs font-medium">Switch between light and dark themes</p>
+          </div>
+        </div>
+        <button 
+          onClick={toggleTheme}
+          className={cn(
+            "w-14 h-8 rounded-full transition-all relative",
+            theme === 'dark' ? "bg-primary shadow-[0_0_15px_rgba(143,255,0,0.4)]" : "bg-gray-200"
+          )}
+        >
+          <motion.div 
+            animate={{ x: theme === 'dark' ? 24 : 4 }}
+            className={cn(
+              "absolute top-1 w-6 h-6 rounded-full shadow-md",
+              theme === 'dark' ? "bg-black" : "bg-white"
+            )}
+          />
+        </button>
       </div>
 
       {/* Menu / Settings */}
