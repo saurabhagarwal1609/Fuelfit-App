@@ -1,0 +1,7 @@
+{
+  "name": "FuelFit",
+  "description": "Premium AI-powered performance nutrition and workout tracking app.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

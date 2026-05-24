@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Global Safety Net
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == "saurabhvsics@gmail.com"
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ===============================================================
+    // Validation Blueprints
+    // ===============================================================
+    
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid == request.auth.uid &&
+             data.email == request.auth.token.email &&
+             data.uid is string &&
+             data.email is string &&
+             (!('firstName' in data) || (data.firstName is string && data.firstName.size() <= 100)) &&
+             (!('lastName' in data) || (data.lastName is string && data.lastName.size() <= 100)) &&
+             (!('weight' in data) || (data.weight is number)) &&
+             (!('height' in data) || (data.height is number)) &&
+             (!('age' in data) || (data.age is number)) &&
+             (!('dailyCalorieTarget' in data) || (data.dailyCalorieTarget is number));
+    }
+
+    function isValidMeal(data) {
+      return data.keys().hasAll(['uid', 'name', 'calories', 'timestamp']) &&
+             data.uid == request.auth.uid &&
+             data.uid is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.calories is number &&
+             data.timestamp is timestamp;
+    }
+
+    function isValidWorkout(data) {
+      return data.keys().hasAll(['uid', 'exerciseName', 'timestamp']) &&
+             data.uid == request.auth.uid &&
+             data.uid is string &&
+             data.exerciseName is string && data.exerciseName.size() > 0 && data.exerciseName.size() <= 200 &&
+             (!('sets' in data) || (data.sets is number)) &&
+             (!('reps' in data) || (data.reps is number)) &&
+             (!('weight' in data) || (data.weight is number)) &&
+             data.timestamp is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Matches
+    // ===============================================================
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Users cannot list other users
+      
+      allow create: if (isOwner(userId) && isValidUserProfile(incoming()) && incoming().createdAt == request.time) || isAdmin();
+      
+      allow update: if (isOwner(userId) && isValidUserProfile(incoming()) && 
+        incoming().uid == existing().uid && 
+        incoming().email == existing().email &&
+        incoming().createdAt == existing().createdAt
+      ) || isAdmin();
+      
+      allow delete: if isAdmin(); // Soft delete or admin only
+    }
+
+    match /meals/{mealId} {
+      allow get: if (isSignedIn() && existing().uid == request.auth.uid) || isAdmin();
+      allow list: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+      
+      allow create: if (isSignedIn() && isValidMeal(incoming()) && isValidId(mealId) && incoming().timestamp == request.time) || isAdmin();
+      
+      allow update: if (isSignedIn() && existing().uid == request.auth.uid && isValidMeal(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().timestamp == existing().timestamp
+      ) || isAdmin();
+      
+      allow delete: if (isSignedIn() && existing().uid == request.auth.uid) || isAdmin();
+    }
+
+    match /workouts/{workoutId} {
+      allow get: if (isSignedIn() && existing().uid == request.auth.uid) || isAdmin();
+      allow list: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+      
+      allow create: if (isSignedIn() && isValidWorkout(incoming()) && isValidId(workoutId) && incoming().timestamp == request.time) || isAdmin();
+      
+      allow update: if (isSignedIn() && existing().uid == request.auth.uid && isValidWorkout(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().timestamp == existing().timestamp
+      ) || isAdmin();
+      
+      allow delete: if (isSignedIn() && existing().uid == request.auth.uid) || isAdmin();
+    }
+  }
+}
+
