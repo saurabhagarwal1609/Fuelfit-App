@@ -1,0 +1,23 @@
+{
+  "name": "FuelFit",
+  "short_name": "FuelFit",
+  "description": "AI-Powered Performance Nutrition",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020C06",
+  "theme_color": "#8FFF00",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/lucide-static/lucide@latest/icons/apple.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/lucide-static/lucide@latest/icons/apple.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
